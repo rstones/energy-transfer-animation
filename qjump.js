@@ -71,7 +71,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 		this.calculationFinished = this.timeLeft < 0;
 	}
 
-	// will return false when calculation has terminated
+	// will return true when calculation has terminated
 	// still need to add population check for a certain state (maybe can override a function called terminationCondition to set custom conditions?)
 	// also checks termination conditions (final time reached, or certain amount of population has reached trap state etc)
 	this.nextTimestep = function() {
@@ -84,6 +84,21 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 			this.currentWaitingTime = this.waitingTime()
 		}
 		this.checkTerminationConditions();
-		return !this.calculationFinished;
+		return this.calculationFinished;
+	}
+
+	this.populations = function() {
+		var result = [];
+		for (var i = 0; i < this.currentState.length; i++) {
+			result.push(Math.pow(this.currentState[i],2));
+		}
+		return result;
+	}
+
+	this.reset = function(initState) {
+		this.calculationFinished = false;
+		this.timeLeft = totalTime;
+		this.currentState = initState;
+		this.currentWaitingTime = this.waitingTime();
 	}
 };
