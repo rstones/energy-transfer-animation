@@ -1,3 +1,8 @@
+/*
+	Object to carry out quantum jump trajectory calculations for a simple system with time independent 
+	jump rates. Termination conditions can be defined by overriding the terminationConditions function.
+	This object depends on the script num.js for linear algebra calculations.
+*/
 var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) {
 
 	this.currentState = initialState;
@@ -7,70 +12,22 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 	this.totalTime = totalTime
 	this.timeLeft = totalTime;
 	this.calculationFinished = false;
-	
-	// generate a 1D array of random numbers between 0 and 1 with length numTimeSteps
-	//this.generateRandomNumberArray = function(numTimeSteps) {
-	//	var result = [];
-	//	for (var i = 0; i < numTimeSteps; i++) {
-	//		result.push(Math.random());
-	//	}
-	//	return result;
-	//}
+	this.totalJumpRate = numjs.sum(this.jumpRates);	
 
-	//this.randomNumbers = this.generateRandomNumberArray(Math.round(this.time/this.timestep));
-	
 	// returns waiting time
 	// this is the simplest waiting time distribution with time independent rates (check this is physical for our system)
 	this.waitingTime = function() {
 		return (-1.0 / this.totalJumpRate) * math.log(Math.random());
 	}
 	
-	// sums elements in a 1D array A
-	this.sum = function(A) {
-		var count = 0;
-		for (var i=A.length; i--;) {
-			count += A[i];
-		}
-		return count;
-	}
-
-	// implement matrix multiplication function for a 2D array A and a 1D array B
-	this.multiply = function(A, B) {
-		
-	}
-	
-	// exponentiate 2D matrix A
-	this.expm = function(A) {
-
-	}
-	
-	// calculate norm of a vector V
-	this.norm = function(V) {
-		var result = 0;
-		for (var i = 0; i < V.length; i++) {
-			result += Math.pow(V[i],2);
-		}
-		return Math.sqrt(result);
-	}
-
-	// create a 1D array of zeros with length n
-	this.zeroVector = function(n) {
-		var result = [];
-		for (var i = 0; i < n; i++) {
-			result.push(0);
-		}
-		return result;
-	}
-	
-	this.totalJumpRate = this.sum(this.jumpRates);
 	this.currentWaitingTime = this.waitingTime()
-	// calculate time evolution operator exp(-i*H*\delta_t)	once here
+	this.timeEvolutionOperator = numjs.expm(math.multiply(math.complex(0,-1), math.multiply(this.hamiltonian, this.timestep)));
 	
 	// evolves wavefunction for single timestep, updating currentState
 	// (according to Schrodinger eqn? I think there may be an extra term needed. See Breuer and Petruccione)
 	this.evolveForTimestep = function() {
-		var nextState = this.multiply(this.timeEvolutionOperator, this.currentState);
-		this.currentState =  nextState / this.norm(nextState);
+		var nextState = numjs.dot(this.timeEvolutionOperator, this.currentState);
+		this.currentState = nextState / numjs.norm(nextState);
 	}
 
 	// based on amplitudes for each site, rate to jump to each site etc...
@@ -102,7 +59,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 				break;
 			}
 		}
-		var nextState = this.zeroVector(this.currentState.length);
+		var nextState = numjs.zeros(this.currentState.length);
 		nextState[jumpState] = 1.0;
 		this.currentState = nextState;  
 	}

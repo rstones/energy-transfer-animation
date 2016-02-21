@@ -5,9 +5,7 @@ var numjs = (function() {
 	/*
 	Requires math.js for complex numbers
 	
-	Still need to do eye, linspace to remove need for numeric js which doesnt deal with complex numbers well
-	
-	Also need more rigourous checks of array shapeensions and array element types (should be Complex object or number)
+	Also need more rigourous checks of array dimensions and array element types (should be Complex object or number)
 		maybe write some generic private functions to do this. Also unit tests...
 		
 	Make all functions compatible with 1D and 2D arrays, throw Exception to warn otherwise	
@@ -50,7 +48,7 @@ var numjs = (function() {
 		} else if (a.length == 2) {
 			return ns.fill2DArray(a, 0);
 		} else {
-			new Exception("numjs.zeros: array of shapeension greater than 2 passed as arg. Only 1D and 2D arrays supported.");
+			new Exception("numjs.zeros: array of dimension greater than 2 passed as arg. Only 1D and 2D arrays supported.");
 		}
 	}
 
@@ -135,6 +133,15 @@ var numjs = (function() {
 			result.push(i*step);
 		}
 		return result;
+	}
+
+	// calculate norm of a 1D array
+	ns.norm = function(a) {
+		var result = 0;
+		for (var i = 0; i < a.length; i++) {
+			result += math.pow(a[i],2);
+		}
+		return math.sqrt(result);
 	}
 
 	// currently assuming square arrays of same dimension
