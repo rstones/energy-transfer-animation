@@ -3,11 +3,13 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.setup = function() {
 		sketch.createCanvas(400,200);
 		// generate Hamiltonian and quantum jump data in new worker thread
+		// create qjump object to do the calculations
 		// loading screen
 		// draw three environments, pigment complex, controls etc
 	};
 
 	sketch.draw = function() {
+		
 		
 	};
 	
@@ -22,6 +24,18 @@ var energyTransferAnimation = new p5(function(sketch) {
 	// and the representation of the environment for the animation (maybe some spring/coiled stretchy cord simulations?)
 	sketch.Environment = function() {
 
+	}
+
+	sketch.TextBox = function() {
+
+	}
+
+	sketch.PopUpBox = function() {
+
+	}
+
+	sketch.Button = function() {
+	
 	}
 
 	// create constructor functions for object prototypes such as chromophores, controls, environments, text boxes etc...
