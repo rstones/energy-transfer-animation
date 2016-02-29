@@ -36,7 +36,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 		// calculate population of each state and normalization
 		var pops = [];
 		var normalization = 0
-		for (var i = 0; i < this.currentState.length; i++;) {
+		for (var i = 0; i < this.currentState.length; i++) {
 			pops.push(Math.pow(this.currentState[i], 2));
 			normalization += this.jumpRates[i]*pops[i];
 			
