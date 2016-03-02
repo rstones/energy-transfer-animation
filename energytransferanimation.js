@@ -1,11 +1,18 @@
 var energyTransferAnimation = new p5(function(sketch) {
 	
 	sketch.initState = [1., 0, 0, 0, 0, 0, 0];
-	sketch.hamiltonian = [[],[],[],[],[],[],[]];
-	sketch.jumpRates = [];
+	// hamiltonian from Ishizaki and Fleming, PNAS, 106, 17255 (2009)
+	sketch.hamiltonian = [[12410.0, 87.7, -5.5, 5.9, -6.7, 13.7, 9.9],
+				[87.7, 12530.0, -30.8, -8.2, -0.7, -11.8, -4.3],
+				[-5.5, -30.8, 12210.0, 53.5, 2.2, 9.6, -6.0],
+				[5.9, -8.2, 53.5, 12320.0, 70.7, 17.0, 63.3],
+				[-6.7, -0.7, 2.2, 70.7, 12480.0, -81.1, 1.3],
+				[13.7, -11.8, 9.6, 17.0, -81.1, 12630.0, -39.7],
+				[9.9, -4.3, -6.0, 63.3, 1.3, -39.7, 12440.0]];
+	sketch.jumpRates = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
 	sketch.timestep = 0.001;
 	sketch.totalTime = 10.0;
-	sketch.qJump = 0//new QJump(sketch.initState, sketch.hamiltonian, sketch.jumpRates, sketch.timestep, sketch.totalTime);
+	sketch.qJump = new QJump(sketch.initState, sketch.hamiltonian, sketch.jumpRates, sketch.timestep, sketch.totalTime);
 	
 	sketch.canvasWidth = 1500;
 	sketch.canvasHeight = 600;
@@ -14,8 +21,8 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.environments = [];
 	sketch.currentEnvironment = 0;
 	sketch.envPositions = [sketch.createVector(300,300),sketch.createVector(750,300),sketch.createVector(1200,300)]; // define centre positions
-	sketch.chromophoreRelativePositions = [sketch.createVector(0,0),sketch.createVector(-100,100),sketch.createVector(20,120),sketch.createVector(100,100),sketch.createVector(-50,150),
-						sketch.createVector(75,200),sketch.createVector(-25,300)];
+	// may need to look at actual positional data of FMO for the chromophore relative positions later on
+	sketch.chromophoreRelativePositions = [sketch.createVector(0,0), sketch.createVector(-100,100), sketch.createVector(20,120), sketch.createVector(100,100), 								sketch.createVector(-50,150), sketch.createVector(75,200), sketch.createVector(-25,300)];
 	sketch.complex = null;
 	
 	/*
@@ -156,14 +163,13 @@ var energyTransferAnimation = new p5(function(sketch) {
 		sketch.smooth();
 		sketch.rectMode(sketch.CENTER);
 		sketch.background(200);
-		// generate Hamiltonian and quantum jump data in new worker thread
-		// create qjump object to do the calculations
-		// loading screen
-		// draw three environments, pigment complex, controls etc
+		// instantiate the environments
 		for (var i = 0; i < sketch.envCouplingVals.length; i++) {
 			sketch.environments.push(new sketch.Environment(sketch.envCouplingVals[i], sketch.envPositions[i]));
 		}
+		// instantiate the light-harvesting complex
 		sketch.complex = new sketch.Complex(sketch.chromophoreRelativePositions, sketch.initState);
+		// display everything at the start
 		for (var i = 0; i < sketch.environments.length; i++) {
 			sketch.environments[i].display();
 		}
@@ -172,16 +178,22 @@ var energyTransferAnimation = new p5(function(sketch) {
 
 	sketch.draw = function() {
 		sketch.background(200);
-		//var calculationFinished = sketch.qJump.nextTimestep(); // need to check whether calculation has terminated each time so we can reset
-		//sketch.complex.updatePopulations(qJump.populations());
+		var calculationFinished = sketch.qJump.nextTimestep(); // need to check whether calculation has terminated each time so we can reset
+		sketch.complex.updatePopulations(sketch.qJump.populations());
+		var pops = sketch.qJump.populations();
+		var result = 0;
+		for (var i = 0; i < pops.length; i++) {
+			result += pops[i];
+		}
+		console.log(result);
 		for (var i = 0; i < sketch.environments.length; i++) {
 			sketch.environments[i].display();
 		}
 		sketch.complex.display(sketch.envPositions[sketch.currentEnvironment]);
 		// trap state population bar? other display stuff
-		//if (calculationFinished) {
-			// reset
-		//}
+		if (sketch.qJump.calculationFinished) {
+			console.log("calculation finished");
+		}
 	};
 
 	sketch.mousePressed = function() {

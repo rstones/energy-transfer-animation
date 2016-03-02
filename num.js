@@ -139,7 +139,7 @@ var numjs = (function() {
 	ns.norm = function(a) {
 		var result = 0;
 		for (var i = 0; i < a.length; i++) {
-			result += math.pow(a[i],2);
+			result = math.add(result, math.pow(a[i],2));
 		}
 		return math.sqrt(result);
 	}

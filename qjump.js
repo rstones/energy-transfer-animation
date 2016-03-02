@@ -27,7 +27,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 	// (according to Schrodinger eqn? I think there may be an extra term needed. See Breuer and Petruccione)
 	this.evolveForTimestep = function() {
 		var nextState = numjs.dot(this.timeEvolutionOperator, this.currentState);
-		this.currentState = nextState / numjs.norm(nextState);
+		this.currentState = math.multiply(nextState, math.pow(numjs.norm(nextState),-1));
 	}
 
 	// based on amplitudes for each site, rate to jump to each site etc...
@@ -52,14 +52,14 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 		var r = Math.random();
 		var jumpState = 0;
 		var probSum = 0;
-		for (var i = 0; i < this.jumpProbs.length; i++) {
+		for (var i = 0; i < jumpProbs.length; i++) {
 			probSum += pops[i];
 			if (r < probSum) {
 				jumpState = i;
 				break;
 			}
 		}
-		var nextState = numjs.zeros(this.currentState.length);
+		var nextState = numjs.zeros([this.currentState.length]);
 		nextState[jumpState] = 1.0;
 		this.currentState = nextState;  
 	}
@@ -75,7 +75,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 	// still need to add population check for a certain state (maybe can override a function called terminationCondition to set custom conditions?)
 	// also checks termination conditions (final time reached, or certain amount of population has reached trap state etc)
 	this.nextTimestep = function() {
-		if (this.currentwaitingTime > 0 && !this.calculationFinished) {
+		if (this.currentWaitingTime > 0 && !this.calculationFinished) {
 			this.evolveForTimestep();
 			this.currentWaitingTime -= this.timestep;
 			this.totalTime -= this.timestep;
@@ -90,7 +90,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 	this.populations = function() {
 		var result = [];
 		for (var i = 0; i < this.currentState.length; i++) {
-			result.push(Math.pow(this.currentState[i],2));
+			result.push(math.pow(math.abs(this.currentState[i]),2));
 		}
 		return result;
 	}
