@@ -27,7 +27,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 	// (according to Schrodinger eqn? I think there may be an extra term needed. See Breuer and Petruccione)
 	this.evolveForTimestep = function() {
 		var nextState = numjs.dot(this.timeEvolutionOperator, this.currentState);
-		this.currentState = math.multiply(nextState, math.pow(numjs.norm(nextState),-1));
+		this.currentState = math.multiply(nextState, math.pow(numjs.norm(nextState),-1)); // this normalisation is only needed if we include a dissipative term in the timestep operator?
 	}
 
 	// based on amplitudes for each site, rate to jump to each site etc...
@@ -47,7 +47,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 			jumpProbs.push(this.jumpRates * pops[i] / normalization);
 		}
 		// divide [0,1] into K sub-intervals each with length p_j
-		// pick random number rbetween [0,1]
+		// pick random number r between [0,1]
 		// see which interval r is in
 		var r = Math.random();
 		var jumpState = 0;
@@ -61,7 +61,8 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 		}
 		var nextState = numjs.zeros([this.currentState.length]);
 		nextState[jumpState] = 1.0;
-		this.currentState = nextState;  
+		this.currentState = nextState; 
+		//console.log("selected jump to state " + jumpState);
 	}
 
 	// this should be overridden by the user to set custom termination conditions such as checking for population reaching a certain level
