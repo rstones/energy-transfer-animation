@@ -9,15 +9,21 @@ var energyTransferAnimation = new p5(function(sketch) {
 							[-6.7, -0.7, 2.2, 70.7, 12480.0, -81.1, 1.3],
 							[13.7, -11.8, 9.6, 17.0, -81.1, 12630.0, -39.7],
 							[9.9, -4.3, -6.0, 63.3, 1.3, -39.7, 12440.0]];
-	sketch.jumpRates = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0];
+	sketch.hamiltonian = [[0, 8.0, 0, 0, 0, 0, 0],
+							[8.0, 0, 8.0, 0, 0, 0, 0],
+							[0, 8.0, 0, 8.0, 0, 0, 0],
+							[0, 0, 8.0, 0, 8.0, 0, 0],
+							[0, 0, 0, 8.0, 0, 8.0, 0],
+							[0, 0, 0, 0, 8.0, 0, 8.0],
+							[0, 0, 0, 0, 0, 8.0, 0]];
+	sketch.envJumpRates = [[0, 0, 0, 0, 0, 0, 0], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]];
 	sketch.timestep = 0.001;
 	sketch.totalTime = 1.0;
-	sketch.qJump = new QJump(sketch.initState, sketch.hamiltonian, sketch.jumpRates, sketch.timestep, sketch.totalTime);
+	sketch.qJump = new QJump(sketch.initState, sketch.hamiltonian, sketch.envJumpRates[0], sketch.timestep, sketch.totalTime);
 	
 	sketch.canvasWidth = 1500;
 	sketch.canvasHeight = 600;
 
-	sketch.envCouplingVals = [0, 10, 100];
 	sketch.environments = [];
 	sketch.currentEnvironment = 0;
 	sketch.envPositions = [sketch.createVector(300,300),sketch.createVector(750,300),sketch.createVector(1200,300)]; // define centre positions
@@ -58,14 +64,14 @@ var energyTransferAnimation = new p5(function(sketch) {
 			// fill with opacity scaled by population
 			if (beingDragged) {
 				sketch.stroke(125);
-				sketch.fill(125);
+				sketch.fill(0);
 				sketch.ellipse(this.relativePos.x+3, this.relativePos.y+3, this.size, this.size);
 
 			}
-			sketch.stroke(0);
-			sketch.fill(200);
+			sketch.stroke(125);
+			sketch.fill(0);
 			sketch.ellipse(this.relativePos.x, this.relativePos.y, this.size, this.size);
-			sketch.fill(255,0,0,255*this.population);
+			sketch.fill(255,255*this.population);
 			sketch.ellipse(this.relativePos.x, this.relativePos.y, this.size, this.size);
 		}
 	};
@@ -138,7 +144,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.Environment.prototype = {
 		constructor: sketch.Environment,
 		display: function() {
-			sketch.stroke(0);
+			sketch.stroke(125);
 			sketch.rect(this.pos.x, this.pos.y, this.width, this.height); 
 		}
 	};
@@ -164,8 +170,8 @@ var energyTransferAnimation = new p5(function(sketch) {
 		sketch.rectMode(sketch.CENTER);
 		sketch.background(200);
 		// instantiate the environments
-		for (var i = 0; i < sketch.envCouplingVals.length; i++) {
-			sketch.environments.push(new sketch.Environment(sketch.envCouplingVals[i], sketch.envPositions[i]));
+		for (var i = 0; i < sketch.envJumpRates.length; i++) {
+			sketch.environments.push(new sketch.Environment(sketch.envJumpRates[i], sketch.envPositions[i]));
 		}
 		// instantiate the light-harvesting complex
 		sketch.complex = new sketch.Complex(sketch.chromophoreRelativePositions, sketch.initState);
@@ -177,10 +183,9 @@ var energyTransferAnimation = new p5(function(sketch) {
 	};
 
 	sketch.draw = function() {
-		sketch.background(200);
+		sketch.background(0);
 		var calculationFinished = sketch.qJump.nextTimestep(); // need to check whether calculation has terminated each time so we can reset
 		sketch.complex.updatePopulations(sketch.qJump.populations());
-		console.log(sketch.qJump.populations());
 		for (var i = 0; i < sketch.environments.length; i++) {
 			sketch.environments[i].display();
 		}
@@ -200,6 +205,21 @@ var energyTransferAnimation = new p5(function(sketch) {
 
 	sketch.mouseReleased = function() {
 		if (sketch.complex.beingDragged) {
+			// find nearest env
+			var nearestEnvDistance = sketch.width; // largest possible distance from an environment to initialise
+			var nearestEnvIndex = 0;
+			for (var i = 0; i < sketch.envPositions.length; i++) {
+				var currentEnvPos = sketch.envPositions[i];
+				var d = math.sqrt(math.pow(math.abs(sketch.mouseX - currentEnvPos.x),2) + math.pow(math.abs(sketch.mouseY - currentEnvPos.y),2)); // Pythagoras' theorem
+				if (d < nearestEnvDistance) {
+					nearestEnvDistance = d;
+					nearestEnvIndex = i;
+				}
+			}
+			sketch.currentEnvironment = nearestEnvIndex;
+			// restart animation in new environment
+			sketch.qJump.setJumpRates(sketch.environments[nearestEnvIndex].coupling);
+			sketch.qJump.reset(sketch.initState);
 			sketch.complex.drop();
 		}
 	};

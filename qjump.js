@@ -12,7 +12,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 	this.totalTime = totalTime
 	this.timeLeft = totalTime;
 	this.calculationFinished = false;
-	this.totalJumpRate = numjs.sum(this.jumpRates);	
+	this.totalJumpRate = numjs.sum(this.jumpRates);
 
 	// returns waiting time
 	// this is the simplest waiting time distribution with time independent rates (check this is physical for our system)
@@ -37,14 +37,14 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 		var pops = [];
 		var normalization = 0
 		for (var i = 0; i < this.currentState.length; i++) {
-			pops.push(Math.pow(this.currentState[i], 2));
+			pops.push(math.pow(math.abs(this.currentState[i]), 2));
 			normalization += this.jumpRates[i]*pops[i];
 			
 		}
 		// calculate p_j for each state
 		var jumpProbs = [];
 		for (var i = 0; i < this.currentState.length; i++) {
-			jumpProbs.push(this.jumpRates * pops[i] / normalization);
+			jumpProbs.push(this.jumpRates[i] * pops[i] / normalization);
 		}
 		// divide [0,1] into K sub-intervals each with length p_j
 		// pick random number r between [0,1]
@@ -101,5 +101,10 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 		this.timeLeft = totalTime;
 		this.currentState = initState;
 		this.currentWaitingTime = this.waitingTime();
+	}
+	
+	this.setJumpRates = function(newJumpRates) {
+		this.jumpRates = newJumpRates;
+		this.totalJumpRate = numjs.sum(newJumpRates);
 	}
 };
