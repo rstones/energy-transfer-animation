@@ -20,8 +20,9 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 		return (-1.0 / this.totalJumpRate) * math.log(Math.random());
 	}
 	
-	this.currentWaitingTime = this.waitingTime()
-	this.timeEvolutionOperator = numjs.expm(math.multiply(math.complex(0,-1), math.multiply(this.hamiltonian, this.timestep)));
+	this.currentWaitingTime = this.waitingTime();
+	this.nonHermitianHamiltonian = math.add(this.hamiltonian, math.multiply(math.complex(0,-0.5), numjs.diag(this.jumpRates)));
+	this.timeEvolutionOperator = numjs.expm(math.multiply(math.complex(0,-1), math.multiply(this.nonHermitianHamiltonian, this.timestep)));
 	
 	// evolves wavefunction for single timestep, updating currentState
 	// (according to Schrodinger eqn? I think there may be an extra term needed. See Breuer and Petruccione)
@@ -53,7 +54,7 @@ var QJump = function(initialState, hamiltonian, jumpRates, timestep, totalTime) 
 		var jumpState = 0;
 		var probSum = 0;
 		for (var i = 0; i < jumpProbs.length; i++) {
-			probSum += pops[i];
+			probSum += jumpProbs[i];
 			if (r < probSum) {
 				jumpState = i;
 				break;

@@ -9,18 +9,21 @@ var energyTransferAnimation = new p5(function(sketch) {
 							[-6.7, -0.7, 2.2, 70.7, 12480.0, -81.1, 1.3],
 							[13.7, -11.8, 9.6, 17.0, -81.1, 12630.0, -39.7],
 							[9.9, -4.3, -6.0, 63.3, 1.3, -39.7, 12440.0]];
-	sketch.hamiltonian = [[0, 8.0, 0, 0, 0, 0, 0],
+	sketch.hamiltonian = [[8.0, 8.0, 0, 0, 0, 0, 0],
 							[8.0, 0, 8.0, 0, 0, 0, 0],
 							[0, 8.0, 0, 8.0, 0, 0, 0],
 							[0, 0, 8.0, 0, 8.0, 0, 0],
 							[0, 0, 0, 8.0, 0, 8.0, 0],
 							[0, 0, 0, 0, 8.0, 0, 8.0],
-							[0, 0, 0, 0, 0, 8.0, 0]];
-	sketch.envJumpRates = [[0, 0, 0, 0, 0, 0, 0], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]];
-	sketch.timestep = 0.001;
+							[0, 0, 0, 0, 0, 8.0, -8.0]];
+	sketch.envJumpRates = [[0, 0, 0, 0, 0, 0, 0], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 10.0], [8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 10.0]];
+	sketch.timestep = 0.005;
 	sketch.totalTime = 1.0;
 	sketch.qJump = new QJump(sketch.initState, sketch.hamiltonian, sketch.envJumpRates[0], sketch.timestep, sketch.totalTime);
-	
+	sketch.qJump.checkTerminationConditions = function() {
+		sketch.qJump.calculationFinished = sketch.qJump.populations()[sketch.qJump.populations().length-1] > 0.99999;
+	}	
+
 	sketch.canvasWidth = 1500;
 	sketch.canvasHeight = 600;
 
@@ -48,6 +51,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.population = initPop;
 		this.relativePos = relativePos;
 		this.size = 50;
+		this.trapped = false;
 		// define things like size, fill colour etc...
 	};
 	
@@ -71,7 +75,11 @@ var energyTransferAnimation = new p5(function(sketch) {
 			sketch.stroke(125);
 			sketch.fill(0);
 			sketch.ellipse(this.relativePos.x, this.relativePos.y, this.size, this.size);
-			sketch.fill(255,255*this.population);
+			if (!this.trapped) {
+				sketch.fill(255,255*this.population);
+			} else {
+				sketch.fill(100,255,0,255*this.population);
+			}
 			sketch.ellipse(this.relativePos.x, this.relativePos.y, this.size, this.size);
 		}
 	};
@@ -84,6 +92,9 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.relativePositions = relativePositions;
 		this.anchorOffset = -150;
 		this.beingDragged = false;
+		this.populationTrapped = false;
+		this.trappedFlash = 0;
+		this.trappedFlashIncrement = 5;
 		for (var i = 0; i < this.relativePositions.length; i++) {
 			this.chromophores.push(new sketch.Chromophore(this.relativePositions[i], initPops[i]));
 		}
@@ -105,17 +116,36 @@ var energyTransferAnimation = new p5(function(sketch) {
 			sketch.translate(anchorPos.x, anchorPos.y+this.anchorOffset);
 			sketch.strokeWeight(2);
 			sketch.stroke(0);
-			for (var i = 0; i < this.chromophores.length; i++) {
-				this.chromophores[i].display(this.beingDragged);
+			if (!this.populationTrapped) {
+				for (var i = 0; i < this.chromophores.length; i++) {
+					this.chromophores[i].display(this.beingDragged);
+				}
+			} else {
+				for (var i = 0; i < this.chromophores.length-1; i++) {
+					this.chromophores[i].display(true);
+				}
+				var trapChromophore = this.chromophores[this.chromophores.length-1];
+				trapChromophore.updatePopulation(math.abs(math.sin(2.0*math.pi*this.trappedFlash/255)));
+				trapChromophore.trapped = true;
+				trapChromophore.display(false);
+				trapChromophore.trapped = false;
+				this.trappedFlash += this.trappedFlashIncrement;
+				if (this.trappedFlash > 500) {
+					this.trappedFlash = 0;
+					this.populationTrapped = false;
+				}
 			}
 			// check if mouseOver then highlight if so?
+			
 			sketch.translate(-anchorPos.x, -(anchorPos.y+this.anchorOffset));
 		},
-		mouseOver: function() {
+		mouseOver: function(currentEnvPos) {
 			// if mouse over chromophore area (do i need to save current position and dimensions?)
 			// return true
 			// also need to make it work for touch!
-			return true;
+			if (sketch.mouseX > currentEnvPos.x-120 && sketch.mouseX < currentEnvPos.x+120 && sketch.mouseY > currentEnvPos.y+this.anchorOffset && sketch.mouseY < currentEnvPos.y-this.anchorOffset) {
+				return true;
+			}
 		},
 		drag: function() {
 			this.beingDragged = true;
@@ -138,6 +168,8 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.anchorPos = this.pos; // + offset ?
 		this.width = 400;
 		this.height = 500;
+		this.populationBar = new sketch.PopulationBar(this.anchorPos);
+		this.timer = new sketch.Timer(this.anchorPos);
 
 	};
 	
@@ -145,7 +177,56 @@ var energyTransferAnimation = new p5(function(sketch) {
 		constructor: sketch.Environment,
 		display: function() {
 			sketch.stroke(125);
-			sketch.rect(this.pos.x, this.pos.y, this.width, this.height); 
+			sketch.noFill();
+			sketch.rect(this.pos.x, this.pos.y, this.width, this.height);
+			this.populationBar.display();
+			this.timer.display();
+		}
+	};
+
+	sketch.PopulationBar = function(envAnchorPos) {
+		this.envAnchorPos = envAnchorPos;
+		this.width = 350;
+		this.height = 30;
+		this.populationSum = 0;
+	};
+
+	sketch.PopulationBar.prototype = {
+		constructor: sketch.PopulationBar,
+		display: function() {
+			sketch.noFill();
+			sketch.stroke(125);
+			sketch.rect(this.envAnchorPos.x, this.envAnchorPos.y+220, this.width, this.height); // outline
+			sketch.rectMode(sketch.CORNER);
+			sketch.fill(125);
+			sketch.rect(this.envAnchorPos.x-(this.width/2.0), this.envAnchorPos.y+220-(this.height/2.0), this.populationSum < this.width ? this.populationSum : this.width, this.height); // population
+			sketch.rectMode(sketch.CENTER);
+		},
+		updatePopulationSum: function(currentPopulation) {
+			this.populationSum += currentPopulation;
+		},
+		reset: function() {
+			this.populationSum = 0;
+		}
+	};
+
+	sketch.Timer = function(envAnchorPos) {
+		this.envAnchorPos = envAnchorPos;
+		this.size = 20;
+		this.currentTime = 0;
+	};
+
+	sketch.Timer.prototype = {
+		constructor: sketch.Timer,
+		display: function() {
+			sketch.textSize(this.size);
+			sketch.text(this.currentTime, this.envAnchorPos.x-120, this.envAnchorPos.y+120);
+		},
+		updateTime: function(increment) {
+			this.currentTime += increment;
+		},
+		reset: function() {
+			this.currentTime = 0;
 		}
 	};
 
@@ -184,8 +265,13 @@ var energyTransferAnimation = new p5(function(sketch) {
 
 	sketch.draw = function() {
 		sketch.background(0);
-		var calculationFinished = sketch.qJump.nextTimestep(); // need to check whether calculation has terminated each time so we can reset
-		sketch.complex.updatePopulations(sketch.qJump.populations());
+		if (!sketch.complex.beingDragged && !sketch.complex.populationTrapped) {
+			var calculationFinished = sketch.qJump.nextTimestep(); // need to check whether calculation has terminated each time so we can reset
+			var currentPopulations = sketch.qJump.populations()
+			sketch.complex.updatePopulations(currentPopulations);
+			sketch.environments[sketch.currentEnvironment].populationBar.updatePopulationSum(currentPopulations[currentPopulations.length-1]);
+			sketch.environments[sketch.currentEnvironment].timer.updateTime(sketch.timestep);
+		}
 		for (var i = 0; i < sketch.environments.length; i++) {
 			sketch.environments[i].display();
 		}
@@ -193,12 +279,18 @@ var energyTransferAnimation = new p5(function(sketch) {
 		// trap state population bar? other display stuff
 		if (sketch.qJump.calculationFinished) {
 			console.log("resetting calculation");
+			sketch.complex.populationTrapped = true;
 			sketch.qJump.reset(sketch.initState);
+			sketch.environments[sketch.currentEnvironment].timer.reset();
 		}
+		//sketch.noFill();
+		//sketch.curve(0,0, 600,300, 800,300, 0,0);
+		//sketch.curve(1600,730, 800,300, 900,400, 1600,600);
+		
 	};
 
 	sketch.mousePressed = function() {
-		if (sketch.complex.mouseOver && !sketch.complex.beingDragged) {
+		if (sketch.complex.mouseOver(sketch.envPositions[sketch.currentEnvironment]) && !sketch.complex.beingDragged) {
 			sketch.complex.drag();
 		}
 	};
@@ -216,6 +308,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 					nearestEnvIndex = i;
 				}
 			}
+			sketch.environments[sketch.currentEnvironment].populationBar.reset();
 			sketch.currentEnvironment = nearestEnvIndex;
 			// restart animation in new environment
 			sketch.qJump.setJumpRates(sketch.environments[nearestEnvIndex].coupling);
