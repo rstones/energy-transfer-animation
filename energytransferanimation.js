@@ -9,14 +9,14 @@ var energyTransferAnimation = new p5(function(sketch) {
 							[-6.7, -0.7, 2.2, 70.7, 12480.0, -81.1, 1.3],
 							[13.7, -11.8, 9.6, 17.0, -81.1, 12630.0, -39.7],
 							[9.9, -4.3, -6.0, 63.3, 1.3, -39.7, 12440.0]];
-	sketch.hamiltonian = [[8.0, 8.0, 0, 0, 0, 0, 0],
-							[8.0, 0, 8.0, 0, 0, 0, 0],
-							[0, 8.0, 0, 8.0, 0, 0, 0],
-							[0, 0, 8.0, 0, 8.0, 0, 0],
-							[0, 0, 0, 8.0, 0, 8.0, 0],
-							[0, 0, 0, 0, 8.0, 0, 8.0],
-							[0, 0, 0, 0, 0, 8.0, -8.0]];
-	sketch.envJumpRates = [[0, 0, 0, 0, 0, 0, 0], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 10.0], [8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 10.0]];
+	sketch.hamiltonian = [[8.0, 8.0, 4.0, 0, 0, 0, 0],
+							[8.0, 0, 8.0, 4.0, 0, 0, 0],
+							[4.0, 8.0, 0, 8.0, 4.0, 0, 0],
+							[0, 4.0, 8.0, 0, 8.0, 4.0, 0],
+							[0, 0, 4.0, 8.0, 0, 8.0, 4.0],
+							[0, 0, 0, 4.0, 8.0, 0, 8.0],
+							[0, 0, 0, 0, 4.0, 8.0, -8.0]];
+	sketch.envJumpRates = [[0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.1], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0], [8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 10.0]];
 	sketch.timestep = 0.005;
 	sketch.totalTime = 1.0;
 	sketch.qJump = new QJump(sketch.initState, sketch.hamiltonian, sketch.envJumpRates[0], sketch.timestep, sketch.totalTime);
@@ -31,7 +31,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.currentEnvironment = 0;
 	sketch.envPositions = [sketch.createVector(300,300),sketch.createVector(750,300),sketch.createVector(1200,300)]; // define centre positions
 	// may need to look at actual positional data of FMO for the chromophore relative positions later on
-	sketch.chromophoreRelativePositions = [sketch.createVector(0,0), sketch.createVector(-100,100), sketch.createVector(20,120), sketch.createVector(100,100), 								sketch.createVector(-50,150), sketch.createVector(75,200), sketch.createVector(-25,300)];
+	sketch.chromophoreRelativePositions = [sketch.createVector(0,0), sketch.createVector(-100,100), sketch.createVector(20,120), sketch.createVector(100,100), 								sketch.createVector(-50,190), sketch.createVector(75,200), sketch.createVector(-25,300)];
 	sketch.complex = null;
 	
 	/*
@@ -67,9 +67,9 @@ var energyTransferAnimation = new p5(function(sketch) {
 			// need to work out best way to define position since we are going to be dragging the whole Complex around
 			// fill with opacity scaled by population
 			if (beingDragged) {
-				sketch.stroke(125);
-				sketch.fill(0);
-				sketch.ellipse(this.relativePos.x+3, this.relativePos.y+3, this.size, this.size);
+				sketch.noStroke();
+				sketch.fill(55);
+				sketch.ellipse(this.relativePos.x+5, this.relativePos.y+5, this.size, this.size);
 
 			}
 			sketch.stroke(125);
@@ -95,6 +95,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.populationTrapped = false;
 		this.trappedFlash = 0;
 		this.trappedFlashIncrement = 5;
+		this.timer = new sketch.Timer();
 		for (var i = 0; i < this.relativePositions.length; i++) {
 			this.chromophores.push(new sketch.Chromophore(this.relativePositions[i], initPops[i]));
 		}
@@ -122,7 +123,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 				}
 			} else {
 				for (var i = 0; i < this.chromophores.length-1; i++) {
-					this.chromophores[i].display(true);
+					this.chromophores[i].display(false);
 				}
 				var trapChromophore = this.chromophores[this.chromophores.length-1];
 				trapChromophore.updatePopulation(math.abs(math.sin(2.0*math.pi*this.trappedFlash/255)));
@@ -133,8 +134,10 @@ var energyTransferAnimation = new p5(function(sketch) {
 				if (this.trappedFlash > 500) {
 					this.trappedFlash = 0;
 					this.populationTrapped = false;
+					this.timer.reset();
 				}
 			}
+			this.timer.display()
 			// check if mouseOver then highlight if so?
 			
 			sketch.translate(-anchorPos.x, -(anchorPos.y+this.anchorOffset));
@@ -168,8 +171,9 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.anchorPos = this.pos; // + offset ?
 		this.width = 400;
 		this.height = 500;
-		this.populationBar = new sketch.PopulationBar(this.anchorPos);
-		this.timer = new sketch.Timer(this.anchorPos);
+
+		this.totalTimeSum = 0;
+		this.transferEvents = 0;
 
 	};
 	
@@ -179,48 +183,34 @@ var energyTransferAnimation = new p5(function(sketch) {
 			sketch.stroke(125);
 			sketch.noFill();
 			sketch.rect(this.pos.x, this.pos.y, this.width, this.height);
-			this.populationBar.display();
-			this.timer.display();
-		}
-	};
-
-	sketch.PopulationBar = function(envAnchorPos) {
-		this.envAnchorPos = envAnchorPos;
-		this.width = 350;
-		this.height = 30;
-		this.populationSum = 0;
-	};
-
-	sketch.PopulationBar.prototype = {
-		constructor: sketch.PopulationBar,
-		display: function() {
-			sketch.noFill();
-			sketch.stroke(125);
-			sketch.rect(this.envAnchorPos.x, this.envAnchorPos.y+220, this.width, this.height); // outline
-			sketch.rectMode(sketch.CORNER);
+			sketch.noStroke();
 			sketch.fill(125);
-			sketch.rect(this.envAnchorPos.x-(this.width/2.0), this.envAnchorPos.y+220-(this.height/2.0), this.populationSum < this.width ? this.populationSum : this.width, this.height); // population
-			sketch.rectMode(sketch.CENTER);
+			sketch.textSize(16);
+			sketch.textAlign(sketch.LEFT);
+			sketch.text('average transfer time:', this.pos.x+this.width/2 - 300, this.pos.y+this.height/2 - 20);
+			sketch.textSize(24);
+			sketch.textAlign(sketch.RIGHT);
+			sketch.text((this.transferEvents > 0 ? (this.totalTimeSum/this.transferEvents).toFixed(2) : 0) + 'ps', this.pos.x+this.width/2 - 20, this.pos.y+this.height/2 - 20);
 		},
-		updatePopulationSum: function(currentPopulation) {
-			this.populationSum += currentPopulation;
-		},
-		reset: function() {
-			this.populationSum = 0;
+		updateAverageTime: function(time) {
+			this.totalTimeSum += time;
+			this.transferEvents += 1;
 		}
 	};
 
-	sketch.Timer = function(envAnchorPos) {
-		this.envAnchorPos = envAnchorPos;
-		this.size = 20;
+	sketch.Timer = function() {
+		this.size = 24;
 		this.currentTime = 0;
 	};
 
 	sketch.Timer.prototype = {
 		constructor: sketch.Timer,
-		display: function() {
+		display: function(envAnchorPos) {
+			sketch.noStroke();
+			sketch.fill(125);
+			sketch.textAlign(sketch.LEFT);
 			sketch.textSize(this.size);
-			sketch.text(this.currentTime, this.envAnchorPos.x-120, this.envAnchorPos.y+120);
+			sketch.text(this.currentTime.toFixed(2) + 'ps', -120, 240);
 		},
 		updateTime: function(increment) {
 			this.currentTime += increment;
@@ -269,8 +259,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 			var calculationFinished = sketch.qJump.nextTimestep(); // need to check whether calculation has terminated each time so we can reset
 			var currentPopulations = sketch.qJump.populations()
 			sketch.complex.updatePopulations(currentPopulations);
-			sketch.environments[sketch.currentEnvironment].populationBar.updatePopulationSum(currentPopulations[currentPopulations.length-1]);
-			sketch.environments[sketch.currentEnvironment].timer.updateTime(sketch.timestep);
+			sketch.complex.timer.updateTime(sketch.timestep);
 		}
 		for (var i = 0; i < sketch.environments.length; i++) {
 			sketch.environments[i].display();
@@ -281,7 +270,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 			console.log("resetting calculation");
 			sketch.complex.populationTrapped = true;
 			sketch.qJump.reset(sketch.initState);
-			sketch.environments[sketch.currentEnvironment].timer.reset();
+			sketch.environments[sketch.currentEnvironment].updateAverageTime(sketch.complex.timer.currentTime);
 		}
 		//sketch.noFill();
 		//sketch.curve(0,0, 600,300, 800,300, 0,0);
@@ -292,6 +281,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.mousePressed = function() {
 		if (sketch.complex.mouseOver(sketch.envPositions[sketch.currentEnvironment]) && !sketch.complex.beingDragged) {
 			sketch.complex.drag();
+			sketch.complex.timer.reset();
 		}
 	};
 
@@ -308,7 +298,6 @@ var energyTransferAnimation = new p5(function(sketch) {
 					nearestEnvIndex = i;
 				}
 			}
-			sketch.environments[sketch.currentEnvironment].populationBar.reset();
 			sketch.currentEnvironment = nearestEnvIndex;
 			// restart animation in new environment
 			sketch.qJump.setJumpRates(sketch.environments[nearestEnvIndex].coupling);
