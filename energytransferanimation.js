@@ -18,7 +18,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 							[0, 0, 0, 0, 4.0, 8.0, -8.0]];
 	sketch.envJumpRates = [[0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.1], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0], [8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 10.0]];
 	sketch.envStaticIntensities = [0.002, 0.02, 0.06];
-	sketch.timestep = 0.01;
+	sketch.timestep = 0.02;
 	sketch.totalTime = 1.0;
 	sketch.qJump = new QJump(sketch.initState, sketch.hamiltonian, sketch.envJumpRates[0], sketch.timestep, sketch.totalTime);
 	sketch.qJump.checkTerminationConditions = function() {
@@ -36,7 +36,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.chromophoreRelativePositions = [sketch.createVector(0,0), sketch.createVector(-100,100), sketch.createVector(20,120), sketch.createVector(100,100), 								sketch.createVector(-50,190), sketch.createVector(75,200), sketch.createVector(-25,300)];
 	sketch.complex = null;
 
-	sketch.envJitter = [0, 1.0, 2.0];
+	sketch.envJitter = [0, 1.0, 3.0];
 
 	sketch.textBoxes = [];
 
@@ -149,7 +149,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.beingDragged = false;
 		this.populationTrapped = false;
 		this.trappedFlash = 0;
-		this.trappedFlashIncrement = 10;
+		this.trappedFlashIncrement = 20;
 		this.timer = new sketch.Timer();
 		for (var i = 0; i < this.relativePositions.length; i++) {
 			this.chromophores.push(new sketch.Chromophore(this.relativePositions[i], initPops[i]));
@@ -228,6 +228,11 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.anchorPos = this.pos; // + offset ?
 		this.width = 400;
 		this.height = 500;
+		
+		this.xMin = this.pos.x-this.width/2;
+		this.xMax = this.pos.x+this.width/2;
+		this.yMin = this.pos.y-this.height/2;
+		this.yMax = this.pos.y+this.height/2;
 
 		this.staticIntensity = staticIntensity;
 
@@ -240,6 +245,8 @@ var energyTransferAnimation = new p5(function(sketch) {
 		constructor: sketch.Environment,
 		display: function() {
 			// static effect here
+			
+			/*
 			sketch.loadPixels();
 			var d = sketch.pixelDensity();
 			for (var x = this.pos.x-this.width/2; x < this.pos.x+this.width/2; x++) {
@@ -258,7 +265,15 @@ var energyTransferAnimation = new p5(function(sketch) {
 					}
 				}
 			}
-			sketch.updatePixels();
+			sketch.updatePixels();*/
+			
+			sketch.fill(255,0,0,230);
+			sketch.noStroke();
+			for (var p = 0; p < 2000*this.staticIntensity; p++) {
+				var x = sketch.int(sketch.random(this.xMin, this.xMax));
+				var y = sketch.int(sketch.random(this.yMin, this.yMax));				
+				sketch.ellipse(x,y,3,3)
+			}
 
 			sketch.stroke(125);
 			sketch.noFill();
@@ -378,7 +393,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 			} else {
 				textBox.highlighted = false;
 			}
-			textBox.display();
+			//textBox.display();
 		}
 		sketch.complex.display(sketch.envPositions[sketch.currentEnvironment], sketch.envJitter[sketch.currentEnvironment]);
 		// trap state population bar? other display stuff
