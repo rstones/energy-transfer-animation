@@ -358,6 +358,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.setup = function() {
 		sketch.createCanvas(sketch.canvasWidth, sketch.canvasHeight);
 		sketch.smooth();
+		sketch.frameRate(15);
 		sketch.rectMode(sketch.CENTER);
 		sketch.background(200);
 		// instantiate the environments
