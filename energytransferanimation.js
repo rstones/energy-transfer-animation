@@ -25,13 +25,15 @@ var energyTransferAnimation = new p5(function(sketch) {
 		sketch.qJump.calculationFinished = sketch.qJump.populations()[sketch.qJump.populations().length-1] > 0.99999;
 	}	
 
-	sketch.canvasWidth = 1580;
-	sketch.canvasHeight = 870;
+	sketch.canvasWidth = sketch.windowWidth; //1570;
+	sketch.canvasHeight = sketch.windowHeight; //870;
 
 	sketch.environments = [];
 	sketch.currentEnvironment = 0;
-	sketch.envYCoord = 400;
-	sketch.envPositions = [sketch.createVector(280,sketch.envYCoord),sketch.createVector(780,sketch.envYCoord),sketch.createVector(1280,sketch.envYCoord)]; // define centre positions
+	sketch.envYCoord = sketch.windowHeight/1.8 //400;
+	sketch.envXPositions = [sketch.windowWidth/5.5, sketch.windowWidth/5.5+sketch.windowWidth/3.3, sketch.windowWidth/5.5+2*sketch.windowWidth/3.3];
+	//sketch.envXPositions = [280, 780, 1280];
+	sketch.envPositions = [sketch.createVector(sketch.envXPositions[0],sketch.envYCoord),sketch.createVector(sketch.envXPositions[1],sketch.envYCoord),sketch.createVector(sketch.envXPositions[2],sketch.envYCoord)]; // define centre positions
 	// may need to look at actual positional data of FMO for the chromophore relative positions later on
 	sketch.chromophoreRelativePositions = [sketch.createVector(0,0), sketch.createVector(-100,100), sketch.createVector(20,120), sketch.createVector(100,100), 								sketch.createVector(-50,190), sketch.createVector(75,200), sketch.createVector(-25,300)];
 	sketch.complex = null;
@@ -51,10 +53,10 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.drawHeader = function() {
 		sketch.noStroke();
 		sketch.fill(175);
-		sketch.textSize(36);
+		sketch.textSize(sketch.int(36.0*(sketch.windowWidth/1570)));
 		sketch.textAlign(sketch.LEFT);
 		sketch.text("Quantum Secrets of Photosynthesis", 40, 50);
-		sketch.textSize(20);
+		sketch.textSize(sketch.int(20.0*(sketch.windowWidth/1570)));
 		sketch.text("Drag the light-harvesting complex into the different environments to see the effect on the\ntime for energy transfer "+
 				"from the initial state (red) to the target state (green)", 80, 90);
 	}
@@ -226,8 +228,8 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.coupling = coupling;
 		this.pos = pos;
 		this.anchorPos = this.pos; // + offset ?
-		this.width = 400;
-		this.height = 500;
+		this.width = sketch.windowWidth/4.0;
+		this.height = sketch.windowHeight/1.5;
 		
 		this.xMin = this.pos.x-this.width/2;
 		this.xMax = this.pos.x+this.width/2;
