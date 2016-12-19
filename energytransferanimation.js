@@ -33,7 +33,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.envYCoord = 400;
 	sketch.envPositions = [sketch.createVector(280,sketch.envYCoord),sketch.createVector(780,sketch.envYCoord),sketch.createVector(1280,sketch.envYCoord)]; // define centre positions
 	// may need to look at actual positional data of FMO for the chromophore relative positions later on
-	sketch.chromophoreRelativePositions = [sketch.createVector(0,0), sketch.createVector(-100,100), sketch.createVector(20,120), sketch.createVector(100,100), 								sketch.createVector(-50,190), sketch.createVector(75,200), sketch.createVector(-25,300)];
+	sketch.chromophoreRelativePositions = [sketch.createVector(-70,10), sketch.createVector(-100,100), sketch.createVector(5,120), sketch.createVector(70,80), 								sketch.createVector(-50,190), sketch.createVector(75,200), sketch.createVector(70,290)];
 	sketch.complex = null;
 
 	sketch.envJitter = [0, 1.0, 2.0];
@@ -84,7 +84,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	
 	// constructor function for Chromophore object prototype
 	// how represent chromphore? a circle? a simplistic ball and stick representation? or a space filled representation
-	sketch.Chromophore = function(relativePos, initPop) {
+	sketch.Chromophore = function(relativePos, initPop, image) {
 		
 		this.population = initPop;
 		this.relativePos = relativePos;
@@ -92,6 +92,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.trapped = false;
 		this.initState = false;
 		this.trapState = false;
+		this.image = image;
 		// define things like size, fill colour etc...
 	};
 	
@@ -105,7 +106,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 		display: function(beingDragged, jitter) {
 			// draw Chromophore (start as a circle until the rest is working)
 			if (beingDragged) {
-				sketch.noStroke();
+				/*sketch.noStroke();
 				sketch.fill(55);
 				sketch.ellipse(this.relativePos.x+5, this.relativePos.y+5, this.size, this.size);
 				sketch.stroke(125);
@@ -116,11 +117,12 @@ var energyTransferAnimation = new p5(function(sketch) {
 				} else {
 					sketch.fill(100,255,100,255*this.population);
 				}
-				sketch.ellipse(this.relativePos.x+sketch.int(xRandom), this.relativePos.y+sketch.int(yRandom), this.size, this.size);
+				sketch.ellipse(this.relativePos.x+sketch.int(xRandom), this.relativePos.y+sketch.int(yRandom), this.size, this.size);*/
+				sketch.image(this.image, this.relativePos.x, this.relativePos.y, this.image.width*0.85, this.image.height*0.85);
 			} else {
 				var xRandom = 2.0 * Math.random() * jitter + jitter;
 				var yRandom = 2.0 * Math.random() * jitter + jitter;
-				if (this.initState) {
+				/*if (this.initState) {
 					sketch.stroke(255,100,100);
 				} else if (this.trapState) {
 					sketch.stroke(100,255,100);
@@ -134,14 +136,28 @@ var energyTransferAnimation = new p5(function(sketch) {
 				} else {
 					sketch.fill(100,255,100,255*this.population);
 				}
-				sketch.ellipse(this.relativePos.x+xRandom, this.relativePos.y+yRandom, this.size, this.size);
+				sketch.ellipse(this.relativePos.x+xRandom, this.relativePos.y+yRandom, this.size, this.size);*/
+				sketch.image(this.image, this.relativePos.x+xRandom, this.relativePos.y+yRandom, this.image.width*0.7, this.image.height*0.7);
+				this.drawPopulation(this.relativePos.x+xRandom, this.relativePos.y+yRandom);
+			}
+		},
+		drawPopulation: function(xPos, yPos) {
+			var radius = 60.0 * this.population;
+			sketch.noStroke();
+			for (var r = radius; r > 0; --r) {
+				if (!this.trapped) {
+					sketch.fill(250, 243, 140, 255/r);
+				} else {
+					sketch.fill(50, 255, 50, 255/r);
+				}
+				sketch.ellipse(xPos, yPos, r, r);
 			}
 		}
 	};
 	
 	// constructor for a Complex object
 	// consists of an array of Chromophore objects with certain relative positions
-	sketch.Complex = function(relativePositions, initPops) {
+	sketch.Complex = function(relativePositions, initPops, chromophoreImages) {
 		
 		this.chromophores = [];
 		this.relativePositions = relativePositions;
@@ -152,7 +168,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.trappedFlashIncrement = 10;
 		this.timer = new sketch.Timer();
 		for (var i = 0; i < this.relativePositions.length; i++) {
-			this.chromophores.push(new sketch.Chromophore(this.relativePositions[i], initPops[i]));
+			this.chromophores.push(new sketch.Chromophore(this.relativePositions[i], initPops[i], chromophoreImages[i]));
 		}
 		this.chromophores[0].initState = true;
 		this.chromophores[this.chromophores.length-1].trapState = true;
@@ -240,7 +256,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 		constructor: sketch.Environment,
 		display: function() {
 			// static effect here
-			sketch.loadPixels();
+			/*sketch.loadPixels();
 			var d = sketch.pixelDensity();
 			for (var x = this.pos.x-this.width/2; x < this.pos.x+this.width/2; x++) {
 				for (var y = this.pos.y-this.height/2; y < this.pos.y+this.height/2; y++) {
@@ -259,7 +275,8 @@ var energyTransferAnimation = new p5(function(sketch) {
 				}
 			}
 			sketch.updatePixels();
-
+			*/
+			sketch.image(sketch.fmo_protein_img, this.pos.x, this.pos.y, this.width+50, this.height-80);
 			sketch.stroke(125);
 			sketch.noFill();
 			sketch.rect(this.pos.x, this.pos.y, this.width, this.height);
@@ -342,15 +359,30 @@ var energyTransferAnimation = new p5(function(sketch) {
 
 	sketch.setup = function() {
 		sketch.createCanvas(sketch.canvasWidth, sketch.canvasHeight);
+		sketch.frameRate(25);
 		sketch.smooth();
 		sketch.rectMode(sketch.CENTER);
-		sketch.background(200);
+		sketch.imageMode(sketch.CENTER);
+		//sketch.background(200, 0, 0);
+
+		sketch.fmo_protein_img = sketch.loadImage("media/fmo_protein.png")
+		sketch.fmo_bcl_1 = sketch.loadImage("media/fmo_bcl_1.png")
+		sketch.fmo_bcl_2 = sketch.loadImage("media/fmo_bcl_2.png")
+		sketch.fmo_bcl_3 = sketch.loadImage("media/fmo_bcl_3.png")
+		sketch.fmo_bcl_4 = sketch.loadImage("media/fmo_bcl_4.png")
+		sketch.fmo_bcl_5 = sketch.loadImage("media/fmo_bcl_5.png")
+		sketch.fmo_bcl_6 = sketch.loadImage("media/fmo_bcl_6.png")
+		sketch.fmo_bcl_7 = sketch.loadImage("media/fmo_bcl_7.png")
+		sketch.chromophoreImages = [sketch.loadImage("media/fmo_bcl_1.png"), sketch.loadImage("media/fmo_bcl_2.png"), sketch.loadImage("media/fmo_bcl_3.png"),
+					sketch.loadImage("media/fmo_bcl_4.png"), sketch.loadImage("media/fmo_bcl_5.png"), sketch.loadImage("media/fmo_bcl_6.png"),
+					sketch.loadImage("media/fmo_bcl_7.png")];
+
 		// instantiate the environments
 		for (var i = 0; i < sketch.envJumpRates.length; i++) {
 			sketch.environments.push(new sketch.Environment(sketch.envJumpRates[i], sketch.envPositions[i], sketch.envStaticIntensities[i]));
 		}
 		// instantiate the light-harvesting complex
-		sketch.complex = new sketch.Complex(sketch.chromophoreRelativePositions, sketch.initState);
+		sketch.complex = new sketch.Complex(sketch.chromophoreRelativePositions, sketch.initState, sketch.chromophoreImages);
 		// display everything at the start
 		for (var i = 0; i < sketch.environments.length; i++) {
 			sketch.environments[i].display();
@@ -362,7 +394,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	};
 
 	sketch.draw = function() {
-		sketch.background(0);
+		sketch.background(0, 0, 0);
 		sketch.drawHeader();
 		if (!sketch.complex.beingDragged && !sketch.complex.populationTrapped) {
 			var calculationFinished = sketch.qJump.nextTimestep(); // need to check whether calculation has terminated each time so we can reset
