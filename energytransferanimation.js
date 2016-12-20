@@ -33,7 +33,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.envYCoord = 400;
 	sketch.envPositions = [sketch.createVector(280,sketch.envYCoord),sketch.createVector(780,sketch.envYCoord),sketch.createVector(1280,sketch.envYCoord)]; // define centre positions
 	// may need to look at actual positional data of FMO for the chromophore relative positions later on
-	sketch.chromophoreRelativePositions = [sketch.createVector(-70,10), sketch.createVector(-100,100), sketch.createVector(5,120), sketch.createVector(70,80), 								sketch.createVector(-50,190), sketch.createVector(75,200), sketch.createVector(70,290)];
+	sketch.chromophoreRelativePositions = [sketch.createVector(-70,0), sketch.createVector(-100,90), sketch.createVector(5,110), sketch.createVector(70,70), 								sketch.createVector(-50,180), sketch.createVector(75,190), sketch.createVector(70,280)];
 	sketch.complex = null;
 
 	sketch.envJitter = [0, 1.0, 2.0];
@@ -48,11 +48,14 @@ var energyTransferAnimation = new p5(function(sketch) {
 				"When the coupling is neither too \nweak nor too strong, both synchronised \nquantum transfer and random hopping can \nbe used to transfer energy effectively. \nThe energy can spread over the molecules \nand still have a significant chance \nof quickly localizing at the target state.",
 				"With a very strong coupling, random \nenergy fluctuations prevent synchronised \ntransfer of the excitation with a \nstrong tendancy for it to be localized \non single molecules. There is a random \nhopping of the excitation which \nis an inefficient way to transfer energy \ngiving long average transfer times."];
 
+	sketch.timerFont;
+
 	sketch.drawHeader = function() {
 		sketch.noStroke();
 		sketch.fill(175);
-		sketch.textSize(36);
 		sketch.textAlign(sketch.LEFT);
+		sketch.textFont("Helvetica");
+		sketch.textSize(36);
 		sketch.text("Quantum Secrets of Photosynthesis", 40, 50);
 		sketch.textSize(20);
 		sketch.text("Drag the light-harvesting complex into the different environments to see the effect on the\ntime for energy transfer "+
@@ -276,18 +279,23 @@ var energyTransferAnimation = new p5(function(sketch) {
 			}
 			sketch.updatePixels();
 			*/
-			sketch.image(sketch.fmo_protein_img, this.pos.x, this.pos.y, this.width+50, this.height-80);
+			sketch.image(sketch.fmo_protein_img, this.pos.x, this.pos.y-20, this.width+50, this.height-80);
 			sketch.stroke(125);
 			sketch.noFill();
-			sketch.rect(this.pos.x, this.pos.y, this.width, this.height);
+			sketch.rect(this.pos.x, this.pos.y, this.width, this.height, 10);
 			sketch.noStroke();
 			sketch.fill(125);
-			sketch.textSize(16);
-			sketch.textAlign(sketch.LEFT);
-			sketch.text('average transfer time:', this.pos.x+this.width/2 - 300, this.pos.y+this.height/2 - 20);
-			sketch.textSize(24);
 			sketch.textAlign(sketch.RIGHT);
-			sketch.text((this.transferEvents > 0 ? (this.totalTimeSum/this.transferEvents).toFixed(2) : 0) + 'ps', this.pos.x+this.width/2 - 20, this.pos.y+this.height/2 - 20);
+			sketch.textSize(15);
+			sketch.textFont(sketch.timerFont);
+			sketch.textFont("Helvetica");
+			sketch.text("average\ntransfer time", this.pos.x+this.width/2 - 210, this.pos.y+this.height/2 - 39);
+			sketch.textSize(36);
+			sketch.textFont(sketch.timerFont);
+			sketch.textAlign(sketch.RIGHT);
+			var averageTime = (this.totalTimeSum/this.transferEvents).toFixed(2)
+			averageTimeToPrint = averageTime < 10.0 ? "0"+averageTime : averageTime;
+			sketch.text((this.transferEvents > 0 ? averageTimeToPrint : "00.00") + 'ps', this.pos.x+this.width/2 - 20, this.pos.y+this.height/2 - 20);
 		},
 		updateAverageTime: function(time) {
 			this.totalTimeSum += time;
@@ -303,11 +311,14 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.Timer.prototype = {
 		constructor: sketch.Timer,
 		display: function(envAnchorPos) {
+			sketch.rect(-60, 260, 130, 35, 5);
 			sketch.noStroke();
 			sketch.fill(125);
 			sketch.textAlign(sketch.LEFT);
 			sketch.textSize(this.size);
-			sketch.text(this.currentTime.toFixed(2) + 'ps', -120, 270);
+			sketch.textFont(sketch.timerFont);
+			var timeToPrint = this.currentTime < 10 ? "0"+this.currentTime.toFixed(2) : this.currentTime.toFixed(2);
+			sketch.text(timeToPrint + 'ps', -120, 270);
 		},
 		updateTime: function(increment) {
 			this.currentTime += increment;
@@ -336,11 +347,13 @@ var energyTransferAnimation = new p5(function(sketch) {
 				sketch.fill(175);
 				sketch.rect(this.anchorPos.x, this.anchorPos.y+380, this.width, this.height);
 				sketch.fill(0);
+				sketch.textFont("Helvetica");
 				sketch.text(this.text, this.anchorPos.x-this.width/2+10, this.anchorPos.y+380-this.height/2+25);
 			} else {
 				sketch.fill(0);
 				sketch.rect(this.anchorPos.x, this.anchorPos.y+380, this.width, this.height);
 				sketch.fill(125);
+				sketch.textFont("Helvetica");
 				sketch.text(this.text, this.anchorPos.x-this.width/2+10, this.anchorPos.y+380-this.height/2+25);
 			}
 		}
@@ -356,6 +369,9 @@ var energyTransferAnimation = new p5(function(sketch) {
 
 	// create constructor functions for object prototypes such as chromophores, controls, environments, text boxes etc...
 
+	sketch.preload = function() {
+		sketch.timerFont = sketch.loadFont("media/LCD14.otf");
+	};
 
 	sketch.setup = function() {
 		sketch.createCanvas(sketch.canvasWidth, sketch.canvasHeight);
