@@ -1,0 +1,15 @@
+body {
+	color: rgb(180,180,180);
+}
+
+h1 {
+	margin: 15px;
+}
+
+#intro {
+	width: 1280px;
+	margin: 15px;
+	font-family: "Helvetica";
+	font-size: 1.1em;
+	text-align: justify;
+}
