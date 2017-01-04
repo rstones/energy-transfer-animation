@@ -1,15 +1,30 @@
 body {
 	color: rgb(180,180,180);
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 }
 
 h1 {
 	margin: 15px;
 }
 
+#title {
+	height: 50px;
+	background: black url('media/quantum-secrets-of-photosynthesis-labs-title.png') no-repeat left top;
+	background-size: contain;
+	margin-left: 10px;
+}
+
 #intro {
 	width: 1280px;
-	margin: 15px;
-	font-family: "Helvetica";
+	margin: 5px 15px 10px 15px;
 	font-size: 1.1em;
 	text-align: justify;
+}
+
+#back-button {
+	float: right;
+	position: absolute;
+	left: 1245px;
+	top: 25px;
+	/*background: blue;*/
 }

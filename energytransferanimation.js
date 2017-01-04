@@ -33,35 +33,38 @@ var energyTransferAnimation = new p5(function(sketch) {
 	sketch.envYCoord = 260;
 	sketch.envPositions = [sketch.createVector(210,sketch.envYCoord),sketch.createVector(660,sketch.envYCoord),sketch.createVector(1110,sketch.envYCoord)]; // define centre positions
 	// may need to look at actual positional data of FMO for the chromophore relative positions later on
-	sketch.chromophoreRelativePositions = [sketch.createVector(-70,0), sketch.createVector(-100,90), sketch.createVector(5,110), sketch.createVector(70,70), 								sketch.createVector(-50,180), sketch.createVector(75,190), sketch.createVector(70,280)];
+	sketch.chromophoreRelativePositions = [sketch.createVector(-70,0), sketch.createVector(-100,90), sketch.createVector(25,110), sketch.createVector(50,20), 								sketch.createVector(-50,180), sketch.createVector(75,190), sketch.createVector(70,280)];
 	sketch.complex = null;
 
 	sketch.envJitter = [0, 1.0, 2.0];
 
 	sketch.textBoxes = [];
 
+	sketch.envInteractionText = ["weak", "medium", "strong"];
+
 	sketch.box1Text = ["Observations\n" +
-				"-  The excitation can be found on several molecules at the same time\n" + 
-				"-  The excitation moves between molecules in a synchronised way\n" +
-				"-  On average it takes a long time for the excitation to reach the target molecule",
+				"1.  The excitation can be found on several molecules at the same time\n" + 
+				"2.  The excitation moves between molecules in a synchronised, wavelike way\n" +
+				"3.  On average it takes a long time for the excitation to reach the target molecule",
 				"Observations:\n" +
-				"-  The excitation can be found on several molecules at once for a short time periods\n" + 
-				"-  Sudden jumps localize the excitation on one molecule\n" +
-				"-  On average the excitation reaches the target molecule very quickly",
+				"1.  The excitation can be found on several molecules at once for a short time periods\n" + 
+				"2.  Sudden jumps localize the excitation on one molecule\n" +
+				"3.  On average the excitation reaches the target molecule very quickly",
 				"Observations:\n" +
-				"-  The excitation is found on only one molecule almost all the time\n" + 
-				"-  The excitation moves between molecules through sudden jumps\n" +
-				"-  On average it takes a long time for the excitation to reach the target molecule but not as long as for the weak coupling"];
-	sketch.box2Text = ["Weak coupling\n" +
-				"For a very small interaction with the environment " +
+				"1.  The excitation is found on only one molecule almost all the time\n" + 
+				"2.  The excitation moves between molecules through sudden random jumps\n" +
+				"3.  On average it takes a long time for the excitation to reach the target molecule but not as long as for the weak coupling"];
+	sketch.box2Text = ["Weak interaction\n" +
+				"For a very small interaction with the surroundings " +
 				"energy can spread across the molecules in a wavelike " +
 				"manner. But since the excitation will spend very little " + 							
-				"time on the target state (green) it is unlikely to " + 
-				"localize there.",
-				"Medium coupling\n" +
-				"When the coupling is neither too weak nor too strong, both synchronised quantum transfer and random hopping can be used to transfer energy effectively. The energy can spread over the molecules and still have a significant chance of quickly localizing at the target state.",
-				"Strong coupling\n" +
-				"With a very strong coupling, random energy fluctuations prevent synchronised transfer of the excitation with a strong tendancy for it to be localized on single molecules. There is a random hopping of the excitation which is an inefficient way to transfer energy giving long average transfer times."];
+				"time on the target molecule (green) it is unlikely to " + 
+				"localize there. Energy transfer is slow in this case and the " +
+				"captured energy may end up being lost.",
+				"Medium interaction\n" +
+				"When the interaction is neither too weak nor too strong, both synchronised quantum transfer and random hopping can be used to transfer energy effectively. The energy can spread over the molecules and still have a significant chance of quickly localizing at the target state. This gives the excitation the best chance of reaching the target molecule before it is lost.",
+				"Strong interaction\n" +
+				"With a very strong interaction, random energy fluctuations prevent synchronised transfer of the excitation with a strong tendancy for it to be localized on single molecules. The excitation is transferred through random hopping which is very inefficient and leads to long average transfer times."];
 
 	sketch.timerFont;
 
@@ -111,13 +114,13 @@ var energyTransferAnimation = new p5(function(sketch) {
 			}
 		},
 		drawPopulation: function(xPos, yPos) {
-			var radius = 60.0 * this.population;
+			var radius = 70.0 * (1 - math.exp(-3.0*this.population)); //this.population > 0.005 ? 20 + 60.0 * this.population : 0;
 			sketch.noStroke();
 			for (var r = radius; r > 0; --r) {
 				if (!this.trapped) {
 					sketch.fill(250, 243, 140, 255/r);
 				} else {
-					sketch.fill(50, 255, 50, 255/r);
+					sketch.fill(0,150,0, 255/r); //sketch.fill(50, 255, 50, 255/r);
 				}
 				sketch.ellipse(xPos, yPos, r, r);
 			}
@@ -205,7 +208,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 	// constructor function for Environment object prototype
 	// a single parameter should quantify system-environment coupling for a particular instance, to control both quantum jump calculations
 	// and the representation of the environment for the animation (maybe some spring/coiled stretchy cord simulations?)
-	sketch.Environment = function(coupling, pos, staticIntensity, box1Text, box2Text) {
+	sketch.Environment = function(coupling, pos, staticIntensity, envLabel, box1Text, box2Text) {
 		
 		this.coupling = coupling;
 		this.pos = pos;
@@ -218,7 +221,8 @@ var energyTransferAnimation = new p5(function(sketch) {
 		this.totalTimeSum = 0;
 		this.transferEvents = 0;
 		this.displayInfoButton = false; // only display info button when complex is in this environment
-		this.infoButton = new sketch.InfoButton(this.pos.x-this.width/2+40, this.pos.y+this.height/2-40, 30, null);
+		this.infoButton = new sketch.InfoButton(this.pos.x-this.width/2+48, this.pos.y+this.height/2-35, 40, 25, null);
+		this.envLabel = envLabel;
 		this.displayPopup = false;
 		this.box1Text = box1Text;
 		this.box2Text = box2Text;
@@ -238,9 +242,10 @@ var energyTransferAnimation = new p5(function(sketch) {
 			sketch.textFont(sketch.timerFont);
 			sketch.textFont("Helvetica");
 			sketch.text("average\ntransfer time", this.pos.x+this.width/2 - 190, this.pos.y+this.height/2 - 42);
+			sketch.textAlign(sketch.RIGHT);
+			sketch.text(this.envLabel+" interaction", this.pos.x+this.width/2-40, this.pos.y-this.height/2+38, 60, 40);
 			sketch.textSize(52);
 			sketch.textFont(sketch.timerFont);
-			sketch.textAlign(sketch.RIGHT);
 			var averageTime = (this.totalTimeSum/this.transferEvents).toFixed(2)
 			averageTimeToPrint = averageTime < 10.0 ? "0"+averageTime : averageTime;
 			sketch.text((this.transferEvents > 0 ? averageTimeToPrint : "00.00") + 'ps', this.pos.x+this.width/2 - 20, this.pos.y+this.height/2 - 20);
@@ -260,7 +265,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 				if (i != currentEnv) {
 					sketch.fill(150, 150, 150, 220);
 					sketch.rect(sketch.envPositions[i].x, sketch.envPositions[i].y, this.width, this.height, 10);
-					sketch.fill(30, 30, 30);
+					sketch.fill(20, 20, 20);
 					sketch.text(box == 1 ? this.box1Text : this.box2Text, sketch.envPositions[i].x,
 							sketch.envPositions[i].y, this.width-50, this.height-50);
 					box = 2;
@@ -294,10 +299,11 @@ var energyTransferAnimation = new p5(function(sketch) {
 		}
 	};
 
-	sketch.InfoButton = function(xPos, yPos, size, popupBox) {
+	sketch.InfoButton = function(xPos, yPos, xSize, ySize, popupBox) {
 		this.xPos = xPos;
 		this.yPos = yPos;
-		this.size = size;
+		this.xSize = xSize;
+		this.ySize = ySize;
 		this.popupBox = popupBox;
 	}
 
@@ -311,7 +317,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 			} else {
 				sketch.fill(0,150,0);	
 			}
-			sketch.rect(this.xPos, this.yPos, this.size, this.size, 5);
+			sketch.rect(this.xPos, this.yPos, this.xSize+15, this.ySize, 5);
 			if (this.mouseOver()) {
 				sketch.fill(0,150,0);
 			} else {
@@ -320,13 +326,16 @@ var energyTransferAnimation = new p5(function(sketch) {
 			sketch.textSize(42);
 			sketch.textFont(sketch.timerFont);
 			sketch.textFont("Helvetica");
-			
-			sketch.text("i", this.xPos, this.yPos+10);
-
+			sketch.textAlign(sketch.CENTER);
+			if (sketch.environments[sketch.currentEnvironment].displayPopup) {
+				sketch.text("close", this.xPos, this.yPos+6);
+			} else {
+				sketch.text("info >", this.xPos, this.yPos+6);
+			}
 		},
 		mouseOver: function() {
-			return sketch.mouseX > this.xPos-this.size/2 && sketch.mouseX < this.xPos+this.size/2 
-					&& sketch.mouseY > this.yPos-this.size/2 && sketch.mouseY < this.yPos+this.size/2
+			return sketch.mouseX > this.xPos-this.xSize/2 && sketch.mouseX < this.xPos+this.xSize/2 
+					&& sketch.mouseY > this.yPos-this.ySize/2 && sketch.mouseY < this.yPos+this.ySize/2
 		}
 	}
 
@@ -357,7 +366,7 @@ var energyTransferAnimation = new p5(function(sketch) {
 		// instantiate the environments
 		for (var i = 0; i < sketch.envJumpRates.length; i++) {
 			sketch.environments.push(new sketch.Environment(sketch.envJumpRates[i], sketch.envPositions[i], sketch.envStaticIntensities[i],
-					sketch.box1Text[i], sketch.box2Text[i]));
+					sketch.envInteractionText[i], sketch.box1Text[i], sketch.box2Text[i]));
 		}
 		// instantiate the light-harvesting complex
 		sketch.complex = new sketch.Complex(sketch.chromophoreRelativePositions, sketch.initState, sketch.chromophoreImages);
